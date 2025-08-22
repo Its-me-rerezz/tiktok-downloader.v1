@@ -460,6 +460,7 @@
         <p class="copyright"><b style="color: cyan;">&copy;</b> 2025 TikTok Downloader V1 <b style="color: red;">|</b> By Its Me Rerezz.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const themeToggle = document.getElementById('theme-toggle');
@@ -513,24 +514,34 @@
                 showStatus('Sedang memproses...', 'loading');
                 
                 try {
-                    const apiUrl = `https://api.im-rerezz.xyz/api/dl/tiktokv2?url=${encodeURIComponent(url)}&apikey=${API_KEY}`;
-                    const response = await fetch(apiUrl);
+                    const targetApiUrl = `https://api.im-rerezz.xyz/api/dl/tiktokv2?url=${encodeURIComponent(url)}&apikey=${API_KEY}`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApiUrl)}`;
                     
-                    if (!response.ok) {
-                        throw new Error('Gagal terhubung ke server. Coba lagi nanti.');
-                    }
+                    const response = await axios.get(proxyUrl);
                     
-                    const data = await response.json();
+                    if (response.data && response.data.contents) {
+                        const apiData = JSON.parse(response.data.contents);
 
-                    if (data.status && data.data) {
-                        displayResults(data.data);
-                        showStatus('Berhasil ditemukan!', 'success');
+                        if (apiData.status && apiData.data) {
+                            displayResults(apiData.data);
+                            showStatus('Berhasil ditemukan!', 'success');
+                        } else {
+                            throw new Error(apiData.message || 'URL tidak valid atau video tidak dapat ditemukan.');
+                        }
                     } else {
-                        throw new Error(data.message || 'URL tidak valid atau video tidak dapat ditemukan.');
+                        throw new Error('Gagal mengambil data dari proxy.');
                     }
 
                 } catch (error) {
-                    showStatus(`Terjadi kesalahan: ${error.message}`, 'error');
+                    let errorMessage = 'Terjadi kesalahan tidak diketahui.';
+                    if (error.response) {
+                        errorMessage = `Kesalahan server: ${error.response.status}`;
+                    } else if (error.request) {
+                        errorMessage = 'Tidak ada respon dari server. Periksa koneksi internet Anda.';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                    showStatus(`Terjadi kesalahan: ${errorMessage}`, 'error');
                     resultContainer.style.display = 'none';
                 } finally {
                     setLoading(false);
@@ -571,4 +582,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
